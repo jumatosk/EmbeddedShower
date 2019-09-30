@@ -14,11 +14,12 @@
 //Sensor de temperatura
 #define sensorTemperatura 2 //Porta digital
 #define sensorTInterrupcao 0 
-#include<idDHT11.h>
+//#include<idDHT11.h>
 
 //Funções
 void iniciaLeds();
 void iniciaSensorPresenca();
+int getTemperatura();
 
 void setup() {
   // put your setup code here, to run once:
@@ -44,4 +45,8 @@ void iniciaLeds(){
 
 void iniciaSensorPresenca(){
   pinMode(sensorPresenca, INPUT);
+}
+
+int getTemperatura(){
+  
 }
