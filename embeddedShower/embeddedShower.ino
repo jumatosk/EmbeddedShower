@@ -48,5 +48,5 @@ void iniciaSensorPresenca(){
 }
 
 int getTemperatura(){
-  
+  return sensorPresenca.readTemperature();
 }
