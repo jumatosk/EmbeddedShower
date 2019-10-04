@@ -2,51 +2,181 @@
 //Aluna: Juliana Matos
 //Disciplina: Fundamentos de Sistemas Embarcados
 
-//LED's
-#define temperaturaMinima 10 
+// PENDENTE: AJUSTAR NOME DAS FUNÇÕES QUE AJUSTAM A TEMPERATURA, AJUSTAR O TEMPO QUE O LED FICA ACESO, VER O TEMPO QUE IMPRIME A TEMPERATURA NO SERIAL
+
+//Definição das temperaturas
+#define tempBaixaI 0
+#define tempBaixaII 15
+#define tempMediaI 16
+#define tempMediaII 22
+#define tempAlta 23
+
+//Definição das portas digitaias dos LED's
+#define temperaturaMinima 10
 #define temperaturaMedia 9
 #define temperaturaMaxima 8
 #define agua 11
 
-//Sensor de presença
+//Definição da porta do Sensor de presença
 #define sensorPresenca 4
 
-//Sensor de temperatura
+//Definição da porta do Sensor de temperatura
 #define sensorTemperatura 2 //Porta digital
-#define sensorTInterrupcao 0 
-//#include<idDHT11.h>
+#define sensorTInterrupcao 0
+
+//inclusão de biblioteca do sensor de temperatura
+#include<idDHT11.h>
 
 //Funções
 void iniciaLeds();
 void iniciaSensorPresenca();
-int getTemperatura();
+bool identificaPresenca();
+void sensorTemperaturaWrapper(); //declaração da função de controle da interrupção
+void loopDHT(); //atualiza a leitura do sensor
+void tempoLigado();
+void defineTempBaixa();
+void defineTempMedia();
+void defineTempAlta();
+
+//Instanciação do objeto do sensor DHT11
+idDHT11 DHT11(sensorTemperatura, sensorTInterrupcao, sensorTemperaturaWrapper); //entender o Wrappers
+
 
 void setup() {
-  // put your setup code here, to run once:
+  Serial.begin(9600);
   iniciaLeds();
   iniciaSensorPresenca();
-  
-  //duvida na funcao Serial.begin() -> sensor de presença e temperatura utilizam essa funcao no setup
-  //é necessário duas declarações?
-
 }
+
+//Variavel que verifica presenca
+bool verificaPresenca = identificaPresenca();
+
+//Variaveis do sensor de temperatura
+float grausCelsius;
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
+  loopDHT();
+  Serial.println("Temperatura do ambiente: ");
+  Serial.print(grausCelsius); // verificar se imprime ao lado
+  
+  tempoLigado();
+  //incluir o Serial.print(temperaturaEmCelsius);
 }
 
-void iniciaLeds(){
+void iniciaLeds() {
   pinMode(temperaturaMinima, OUTPUT);
   pinMode(temperaturaMedia, OUTPUT);
   pinMode(temperaturaMaxima, OUTPUT);
   pinMode(agua, OUTPUT);
 }
 
-void iniciaSensorPresenca(){
+void iniciaSensorPresenca() {
   pinMode(sensorPresenca, INPUT);
 }
 
-int getTemperatura(){
-  return sensorPresenca.readTemperature();
+bool identificaPresenca() {
+  bool verificaPresenca = digitalRead(sensorPresenca);
+  return verificaPresenca;
+}
+
+void sensorTemperaturaWrapper() {
+  DHT11.isrCallback();
+}
+
+void loopDHT() {
+#define tempoLeitura 1000
+  static unsigned long delayLeitura = millis() + tempoLeitura + 1; // testar outros valores para verificar se é aqui que limita
+  static bool request = false;
+
+  if ((millis() - delayLeitura) > tempoLeitura) {
+    if (!request) {
+      DHT11.acquire();
+      request = true;
+    }
+  }
+
+  if (request && !DHT11.acquiring()) {
+    request = false;
+
+    int result = DHT11.getStatus();
+
+    switch (result)
+    {
+      case IDDHTLIB_OK:
+        Serial.println("Leitura OK");
+        break;
+      case IDDHTLIB_ERROR_CHECKSUM:
+        Serial.println("Erro\n\r\tErro Checksum");
+        break;
+      case IDDHTLIB_ERROR_ISR_TIMEOUT:
+        Serial.println("Erro\n\r\tISR Time out");
+        break;
+      case IDDHTLIB_ERROR_RESPONSE_TIMEOUT:
+        Serial.println("Erro\n\r\tResponse time out");
+        break;
+      case IDDHTLIB_ERROR_DATA_TIMEOUT:
+        Serial.println("Erro\n\r\tData time out erro");
+        break;
+      case IDDHTLIB_ERROR_ACQUIRING:
+        Serial.println("Erro\n\r\tAcquiring");
+        break;
+      case IDDHTLIB_ERROR_DELTA:
+        Serial.println("Erro\n\r\tDelta time to small");
+        break;
+      case IDDHTLIB_ERROR_NOTSTARTED:
+        Serial.println("Erro\n\r\tNao iniciado");
+        break;
+      default:
+        Serial.println("Erro Desconhecido");
+        break;
+    }
+
+    float valor = DHT11.getCelsius();
+
+    if (!isnan(valor)) {
+      grausCelsius = valor;
+    }
+    delayLeitura = millis();
+  }
+}
+
+void tempoLigado() {
+  if (grausCelsius >= tempBaixaI && grausCelsius >= tempBaixaII && verificaPresenca) {
+    defineTempAlta();
+  }
+
+  else if (grausCelsius >= tempMediaI && grausCelsius <= tempMediaII && verificaPresenca) {
+    defineTempMedia();
+  }
+
+  else if (grausCelsius > tempAlta && verificaPresenca) {
+    defineTempBaixa();
+  }
+}
+
+void defineTempBaixa() {
+  digitalWrite(temperaturaMinima, HIGH);
+  digitalWrite(agua, HIGH);
+  delay(1000);
+  digitalWrite(temperaturaMinima, LOW);
+  digitalWrite(agua, LOW);
+  delay(5000);
+}
+
+void defineTempMedia() {
+  digitalWrite(temperaturaMedia, HIGH);
+  digitalWrite(agua, HIGH);
+  delay(1000);
+  digitalWrite(temperaturaMedia, LOW);
+  digitalWrite(agua, LOW);
+  delay(5000);
+}
+
+void defineTempAlta() {
+  digitalWrite(temperaturaMaxima, HIGH);
+  digitalWrite(agua, HIGH);
+  delay(1000);
+  digitalWrite(temperaturaMaxima, LOW);
+  digitalWrite(agua, LOW);
+  delay(5000);
 }
