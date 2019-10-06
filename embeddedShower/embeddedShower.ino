@@ -30,36 +30,37 @@
 //Funções
 void iniciaLeds();
 void iniciaSensorPresenca();
-bool identificaPresenca();
+int identificaPresenca();
 void sensorTemperaturaWrapper(); //declaração da função de controle da interrupção
 void loopDHT(); //atualiza a leitura do sensor
 void tempoLigado();
 void defineTempBaixa();
 void defineTempMedia();
 void defineTempAlta();
+int defineGrausCelsius();
 
 //Instanciação do objeto do sensor DHT11
 idDHT11 DHT11(sensorTemperatura, sensorTInterrupcao, sensorTemperaturaWrapper); //entender o Wrappers
 
 
 void setup() {
-  Serial.begin(9600);
   iniciaLeds();
   iniciaSensorPresenca();
-}
+  Serial.begin(9600);
 
-//Variavel que verifica presenca
-bool verificaPresenca = identificaPresenca();
+}
 
 //Variaveis do sensor de temperatura
 float grausCelsius;
 
 void loop() {
-  loopDHT();
-  Serial.println("Temperatura do ambiente: ");
-  Serial.print(grausCelsius); // verificar se imprime ao lado
-  
-  tempoLigado();
+  int verificaPresenca = identificaPresenca();
+  if (verificaPresenca == 1) {
+    loopDHT();
+    Serial.print("Temperatura do ambiente: ");
+    Serial.print(grausCelsius); // verificar se imprime ao lado
+    tempoLigado();
+  }
   //incluir o Serial.print(temperaturaEmCelsius);
 }
 
@@ -74,8 +75,8 @@ void iniciaSensorPresenca() {
   pinMode(sensorPresenca, INPUT);
 }
 
-bool identificaPresenca() {
-  bool verificaPresenca = digitalRead(sensorPresenca);
+int identificaPresenca() {
+  int verificaPresenca = digitalRead(sensorPresenca);
   return verificaPresenca;
 }
 
@@ -85,7 +86,7 @@ void sensorTemperaturaWrapper() {
 
 void loopDHT() {
 #define tempoLeitura 1000
-  static unsigned long delayLeitura = millis() + tempoLeitura + 1; // testar outros valores para verificar se é aqui que limita
+  static unsigned long delayLeitura = millis() + tempoLeitura + 5; // testar outros valores para verificar se é aqui que limita
   static bool request = false;
 
   if ((millis() - delayLeitura) > tempoLeitura) {
@@ -103,7 +104,7 @@ void loopDHT() {
     switch (result)
     {
       case IDDHTLIB_OK:
-        Serial.println("Leitura OK");
+        Serial.println("");
         break;
       case IDDHTLIB_ERROR_CHECKSUM:
         Serial.println("Erro\n\r\tErro Checksum");
@@ -141,15 +142,15 @@ void loopDHT() {
 }
 
 void tempoLigado() {
-  if (grausCelsius >= tempBaixaI && grausCelsius >= tempBaixaII && verificaPresenca) {
+  if (grausCelsius >= tempBaixaI && grausCelsius <= tempBaixaII) {
     defineTempAlta();
   }
 
-  else if (grausCelsius >= tempMediaI && grausCelsius <= tempMediaII && verificaPresenca) {
+  else if (grausCelsius >= tempMediaI && grausCelsius <= tempMediaII) {
     defineTempMedia();
   }
 
-  else if (grausCelsius > tempAlta && verificaPresenca) {
+  else if (grausCelsius > tempAlta) {
     defineTempBaixa();
   }
 }
@@ -157,26 +158,26 @@ void tempoLigado() {
 void defineTempBaixa() {
   digitalWrite(temperaturaMinima, HIGH);
   digitalWrite(agua, HIGH);
-  delay(1000);
+  delay(20000);
   digitalWrite(temperaturaMinima, LOW);
   digitalWrite(agua, LOW);
-  delay(5000);
+  delay(10000);
 }
 
 void defineTempMedia() {
   digitalWrite(temperaturaMedia, HIGH);
   digitalWrite(agua, HIGH);
-  delay(1000);
+  delay(15000);
   digitalWrite(temperaturaMedia, LOW);
   digitalWrite(agua, LOW);
-  delay(5000);
+  delay(15000);
 }
 
 void defineTempAlta() {
   digitalWrite(temperaturaMaxima, HIGH);
   digitalWrite(agua, HIGH);
-  delay(1000);
+  delay(10000);
   digitalWrite(temperaturaMaxima, LOW);
   digitalWrite(agua, LOW);
-  delay(5000);
+  delay(20000);
 }
