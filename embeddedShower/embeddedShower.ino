@@ -2,7 +2,6 @@
 //Aluna: Juliana Matos
 //Disciplina: Fundamentos de Sistemas Embarcados
 
-// PENDENTE: AJUSTAR NOME DAS FUNÇÕES QUE AJUSTAM A TEMPERATURA, AJUSTAR O TEMPO QUE O LED FICA ACESO, VER O TEMPO QUE IMPRIME A TEMPERATURA NO SERIAL
 
 //Definição das temperaturas
 #define tempBaixaI 0
@@ -40,7 +39,7 @@ void defineTempAlta();
 int defineGrausCelsius();
 
 //Instanciação do objeto do sensor DHT11
-idDHT11 DHT11(sensorTemperatura, sensorTInterrupcao, sensorTemperaturaWrapper); //entender o Wrappers
+idDHT11 DHT11(sensorTemperatura, sensorTInterrupcao, sensorTemperaturaWrapper);
 
 
 void setup() {
@@ -55,13 +54,14 @@ float grausCelsius;
 
 void loop() {
   int verificaPresenca = identificaPresenca();
+
+  loopDHT();
+  
   if (verificaPresenca == 1) {
-    loopDHT();
     Serial.print("Temperatura do ambiente: ");
-    Serial.print(grausCelsius); // verificar se imprime ao lado
+    Serial.print(grausCelsius);
     tempoLigado();
   }
-  //incluir o Serial.print(temperaturaEmCelsius);
 }
 
 void iniciaLeds() {
@@ -76,8 +76,8 @@ void iniciaSensorPresenca() {
 }
 
 int identificaPresenca() {
-  int verificaPresenca = digitalRead(sensorPresenca);
-  return verificaPresenca;
+  int verificaPresenca = 0;
+  return verificaPresenca = digitalRead(sensorPresenca);
 }
 
 void sensorTemperaturaWrapper() {
@@ -86,7 +86,7 @@ void sensorTemperaturaWrapper() {
 
 void loopDHT() {
 #define tempoLeitura 1000
-  static unsigned long delayLeitura = millis() + tempoLeitura + 5; // testar outros valores para verificar se é aqui que limita
+  static unsigned long delayLeitura = millis() + tempoLeitura + 5;
   static bool request = false;
 
   if ((millis() - delayLeitura) > tempoLeitura) {
@@ -150,7 +150,7 @@ void tempoLigado() {
     defineTempMedia();
   }
 
-  else if (grausCelsius > tempAlta) {
+  else if (grausCelsius >= tempAlta) {
     defineTempBaixa();
   }
 }
