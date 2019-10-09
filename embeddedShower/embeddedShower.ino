@@ -2,7 +2,6 @@
 //Aluna: Juliana Matos
 //Disciplina: Fundamentos de Sistemas Embarcados
 
-
 //Definição das temperaturas
 #define tempBaixaI 0
 #define tempBaixaII 15
